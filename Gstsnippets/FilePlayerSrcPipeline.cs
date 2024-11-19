@@ -62,7 +62,7 @@ public class FilePlayerSrcPipeline
             videoCapsFilter.SetProperty("caps",
                 new Value(Caps.FromString("video/x-raw,format=AYUV,width=1280,height=720,framerate=24/1")));
             videoAppsink.SetProperty("emit-signals", new Value(true));
-            videoAppsink.SetProperty("sync", new Value(true));
+            videoAppsink.SetProperty("sync", new Value(false));
         }
 
         if (AudioAppSrc != null)
@@ -70,7 +70,7 @@ public class FilePlayerSrcPipeline
             audioCapsFilter.SetProperty("caps",
                 new Value(Caps.FromString("audio/x-raw,format=F32LE,rate=44100,channels=2,layout=interleaved")));
             audioAppsink.SetProperty("emit-signals", new Value(true));
-            audioAppsink.SetProperty("sync", new Value(true));
+            audioAppsink.SetProperty("sync", new Value(false));
         }
 
         decodebin.PadAdded += (o, args) =>
@@ -164,7 +164,7 @@ public class FilePlayerSrcPipeline
 
             VideoAppSrc.NeedData += (src, size) =>
             {
-                Console.WriteLine($"------ VideoFileeeeeeeeAppSrc NeedData: {size}");
+                //Console.WriteLine($"------ VideoFileeeeeeeeAppSrc NeedData: {size}");
                 // var sample = audioAppsink.TryPullSample(50000000);
                 // if (sample != null)
                 // {
@@ -189,9 +189,9 @@ public class FilePlayerSrcPipeline
                 if (sample != null)
                 {
                     var buffer = sample.Buffer;
-                    buffer.Pts = currentTimestamp;
-                    buffer.Dts = currentTimestamp;
-                    currentTimestamp += frameDuration; // Opdater timestamp for næste buffer
+                    // buffer.Pts = currentTimestamp;
+                    // buffer.Dts = currentTimestamp;
+                    // currentTimestamp += frameDuration; // Opdater timestamp for næste buffer
 
                     var ret = VideoAppSrc.PushBuffer(buffer);
                     if (ret != FlowReturn.Ok)
@@ -232,15 +232,15 @@ public class FilePlayerSrcPipeline
             
             audioAppsink.NewSample += (o, args) =>
             {
-                var sample = audioAppsink.TryPullSample(5000000);
+                var sample = audioAppsink.PullSample();
                 if (sample != null)
                 {
                     var buffer = sample.Buffer;
                     
-                    buffer.Pts = audioTimestamp;
-                    buffer.Dts = audioTimestamp;
-
-                    audioTimestamp += audioFrameDuration;
+                    // buffer.Pts = audioTimestamp;
+                    // buffer.Dts = audioTimestamp;
+                    //
+                    // audioTimestamp += audioFrameDuration;
                     var ret = AudioAppSrc.PushBuffer(buffer);
                     if (ret != FlowReturn.Ok)
                         Console.WriteLine($"Error pushing audio buffer to AudioAppSrc in {Name}: {ret}");

@@ -26,7 +26,7 @@ public class AudioSinkPipeline
         var audioResample = ElementFactory.Make("audioresample", "audio-resample");
         var audioSinkElement = ElementFactory.Make("autoaudiosink", "audio-sink");
 
-        audioSinkElement.SetProperty("sync", new Value(true)); // Debugging formål
+        audioSinkElement.SetProperty("sync", new Value(false)); // Debugging formål
 
         if (Pipeline == null || AudioAppSrc == null || queue == null || audioConvert == null ||
             audioResample == null || audioSinkElement == null)

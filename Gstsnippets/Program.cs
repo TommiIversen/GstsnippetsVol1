@@ -59,7 +59,7 @@ internal class Program
                 mainPipeline.SetAudioVolume(1, 0.05);
                 mainPipeline.SetAlpha(1, 0.5);
 
-                await Task.Delay(2500);
+                await Task.Delay(5500);
                 //mainPipeline.SetAudioVolume(2, 0.0);
                 mainPipeline.SetAudioVolume(2, 0.0);
                 mainPipeline.SetAudioVolume(0, 0.0);

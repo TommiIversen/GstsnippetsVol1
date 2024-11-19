@@ -26,7 +26,7 @@ public class VideoSinkPipeline
         if (videoSinkElement == null)
             throw new Exception($"Failed to create video sink element for VideoSinkPipeline {name}.");
 
-        videoSinkElement.SetProperty("sync", new Value(true)); // Midlertidigt for debugging
+        videoSinkElement.SetProperty("sync", new Value(false)); // Midlertidigt for debugging
 
         if (Pipeline == null || VideoAppSrc == null)
             throw new Exception($"Failed to create elements for VideoSinkPipeline {name}.");

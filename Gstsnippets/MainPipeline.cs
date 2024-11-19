@@ -31,9 +31,11 @@ public class MainPipeline
         videoAppSink = new AppSink("video-appsink");
         audioAppSink = new AppSink("audio-appsink");
 
+        compositor.SetProperty("ignore-inactive-pads", new Value(false));
+
         // Konfigurer audioMixer-egenskaber
         audioMixer.SetProperty("ignore-inactive-pads", new Value(false));
-        //audioMixer.SetProperty("latency", new Value(1000000000)); // 1
+        audioMixer.SetProperty("latency", new Value(1000000000)); // 1
 
         // Konfigurer AppSink
         videoAppSink.SetProperty("emit-signals", new Value(true));
@@ -77,7 +79,7 @@ public class MainPipeline
             throw new Exception("Failed to link audio elements.");
         CreateVideoInputs(videoInputs);
         CreateAudioInputs(audioInputs);
-        AddTestVideoInput();
+        //AddTestVideoInput();
 
         var bus = Pipeline.Bus;
         bus.AddSignalWatch();
