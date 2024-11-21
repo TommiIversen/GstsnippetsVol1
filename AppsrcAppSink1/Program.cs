@@ -1,9 +1,84 @@
 ﻿using System.Xml;
 using Gst;
 using Gst.App;
+using Task = System.Threading.Tasks.Task;
 using Value = GLib.Value;
 
 namespace AppsrcAppSink1;
+
+
+
+
+public class TextOverlayHandler
+{
+    private readonly Pipeline _pipeline;
+    private readonly Element _textOverlay;
+    private bool _isCounting;
+    private int _count;
+    private int _speed;
+
+    public TextOverlayHandler(Pipeline pipeline)
+    {
+        _pipeline = pipeline;
+        _textOverlay = ElementFactory.Make("textoverlay", "textoverlay-counter");
+        if (_textOverlay == null)
+        {
+            throw new Exception("Fejl: Kunne ikke oprette textoverlay-element.");
+        }
+
+        //_textOverlay["text"] = "";
+        //_textOverlay["font-desc"] = "Sans, 24"; // Font og størrelse
+        //_textOverlay["valignment"] = "top"; // Vertikal justering
+        //_textOverlay["halignment"] = "center"; // Horisontal justering
+
+        var compositor = (Element)pipeline.GetByName("compositor");
+        var textOverlayQueue = ElementFactory.Make("queue", "textoverlay-queue");
+
+        if (compositor == null || textOverlayQueue == null)
+        {
+            throw new Exception("Fejl: Kunne ikke finde compositor eller oprette queue til textoverlay.");
+        }
+
+        _pipeline.Add(textOverlayQueue, _textOverlay);
+        if (!Element.Link(compositor, textOverlayQueue, _textOverlay))
+        {
+            throw new Exception("Fejl: Kunne ikke linke textoverlay-element.");
+        }
+
+        _isCounting = false;
+        _speed = 1; // Standardhastighed
+    }
+
+    public void StartCountdown(int startCount, int speed = 1)
+    {
+        if (_isCounting) return;
+
+        _count = startCount;
+        _speed = speed;
+        _isCounting = true;
+
+        Task.Run(() =>
+        {
+            while (_count >= 0 && _isCounting)
+            {
+                _textOverlay["text"] = _count.ToString();
+                Thread.Sleep(1000 / _speed); // Kontroller hastigheden
+                _count--;
+            }
+
+            _textOverlay["text"] = ""; // Ryd teksten, når nedtællingen er slut
+            _isCounting = false;
+        });
+    }
+
+    public void StopCountdown()
+    {
+        _isCounting = false;
+        _textOverlay["text"] = ""; // Ryd teksten
+    }
+}
+
+
 
 internal class Program
 {
@@ -11,6 +86,18 @@ internal class Program
     {
         // Initialiser GStreamer
         Application.Init();
+        var path = Environment.GetEnvironmentVariable("Path");
+        var gstPathVar = @"C:\gstreamer\1.0\mingw_x86_64";
+        var pp = Path.Combine(gstPathVar, "bin");
+
+        Environment.SetEnvironmentVariable("Path", pp + ";" + path);
+        System.Diagnostics.Debug.WriteLine("Path added: " + pp);
+
+        //Environment.SetEnvironmentVariable("GST_DEBUG_NO_COLOR", "1");
+        Environment.SetEnvironmentVariable("GST_DEBUG", "3");
+        
+        
+
 
         // Opret pipeline med compositor
         var pipeline = CreateMainPipeline();
@@ -18,10 +105,14 @@ internal class Program
         // Opret MP4-optageren
         var appSink = (AppSink)pipeline.GetByName("appsink-mp4recorder"); // Antag, at der er en appsink til rådighed.
         var recorder = new RecordVideo(appSink);
+        
+        // Opret tekstoverlay-handler
+        //var textOverlayHandler = new TextOverlayHandler(pipeline);
+
 
         // Start pipeline
         pipeline.SetState(State.Playing);
-        var filePlayer = new Fileplayer(@"C:\Users\tomi\RiderProjects\GstsnippetsVol1\AppsrcAppSink1\bun33s.mp4",
+        var filePlayer = new Fileplayer(@"..\..\..\bun33s.mp4",
             pipeline,
             "appsrc-sink_0");
 
@@ -44,7 +135,17 @@ internal class Program
 
                 case "2":
                     Console.WriteLine("\nAfspilning af video...");
-                    filePlayer.QuePlay();
+                    filePlayer.QuePlay(@"..\..\..\bun33s.mp4");
+                    break;
+                
+                case "3":
+                    Console.WriteLine("\nAfspilning af video...");
+                    filePlayer.QuePlay(@"..\..\..\bun44s.mp4");
+                    break;
+                
+                case "4":
+                    Console.WriteLine("\nStarter tekstnedtælling...");
+                    //textOverlayHandler.StartCountdown(9, 1);
                     break;
 
                 case "a":

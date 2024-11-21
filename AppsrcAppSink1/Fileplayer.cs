@@ -7,11 +7,13 @@ namespace AppsrcAppSink1;
 
 public class Fileplayer
 {
+    private Element filesrc;
+    
     public Fileplayer(string filePath, Pipeline pipeline, string appsrcName)
     {
         FilePipeline = new Pipeline("file-pipeline");
         // Opret elementer
-        var filesrc = ElementFactory.Make("filesrc", $"filesrc-{appsrcName}");
+        filesrc = ElementFactory.Make("filesrc", $"filesrc-{appsrcName}");
         var decodebin = ElementFactory.Make("decodebin", $"decodebin-{appsrcName}");
         var d3d11convert = ElementFactory.Make("d3d11convert", $"d3d11convert-{appsrcName}");
         var d3d11download = ElementFactory.Make("d3d11download", $"d3d11download-{appsrcName}");
@@ -173,9 +175,47 @@ public class Fileplayer
             Console.WriteLine("Fejl: Kunne ikke starte pipeline korrekt.");
     }
 
-    public void QuePlay()
+    
+    public void QuePlay(string filePath)
+    {
+        Console.WriteLine($"Skifter til ny video: {filePath}");
+
+        // Pause pipeline for at frigøre ressourcer
+        FilePipeline.SetState(State.Null);
+
+        // Unlink filesrc og relink med ny kilde
+        try
+        {
+            filesrc.SetState(State.Null); // Stop kilden
+            filesrc["location"] = filePath; // Opdater til ny fil
+            filesrc.SetState(State.Ready); // Gør kilden klar igen
+
+            Console.WriteLine("Ny kilde konfigureret.");
+
+            // Sæt pipeline til Playing for at starte afspilning
+            var ret2 = FilePipeline.SetState(State.Playing);
+            if (ret2 != StateChangeReturn.Success && ret2 != StateChangeReturn.Async)
+            {
+                Console.WriteLine("Fejl: Kunne ikke sætte pipeline til Playing.");
+                return;
+            }
+
+            const long stopPosition = 1000 * 1000000; // Stop ved 40 ms (nanosekunder)
+            MonitorPosition(FilePipeline, stopPosition);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fejl ved skift af video: {ex.Message}");
+        }
+    }
+    
+    public void QuePlayold(string filePath)
     {
         Console.WriteLine("Queue video til første frame...");
+        
+        
+        filesrc["location"] = filePath;
+
 
         // Sæt pipeline til Playing for at begynde afspilning
         var ret = FilePipeline.SetState(State.Playing);
