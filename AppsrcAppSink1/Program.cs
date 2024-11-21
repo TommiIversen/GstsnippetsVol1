@@ -30,59 +30,53 @@ internal class Program
         inputHandler.Start();
 
         // Lyt til input og udfør handlinger
-        Console.WriteLine("Tryk på 1 for at aktivere videotestsrc, eller 2 for at afspille en video.");
+        Console.WriteLine("Tryk på 1 for at aktivere videotestsrc, 2 for at afspille en video, eller q for at afslutte.");
         while (true)
         {
             var command = inputHandler.GetNextCommand();
 
-            if (command == "1")
+            switch (command)
             {
-                Console.WriteLine("\nAktivering af videotestsrc...");
-                var videoTestSource = new VideoTestSrc(pipeline, "appsrc-sink_1");
-            }
-            else if (command == "2")
-            {
-                Console.WriteLine("\nAfspilning af video...");
-                filePlayer.QuePlay();
-            }
-            else if (command == "a")
-            {
-                recorder.Start();
-            }
-            else if (command == "s")
-            {
-                recorder.Stop();
-            }
+                case "1":
+                    Console.WriteLine("\nAktivering af videotestsrc...");
+                    var videoTestSource = new VideoTestSrc(pipeline, "appsrc-sink_1");
+                    break;
 
-            else if (command == "p")
-            {
-                Console.WriteLine("\nPause/Play...");
-                filePlayer.PlayPause();
-            }
-            else if (command == "p")
-            {
-                Console.WriteLine("\nPause/Play...");
-                filePlayer.PlayPause();
-            }
+                case "2":
+                    Console.WriteLine("\nAfspilning af video...");
+                    filePlayer.QuePlay();
+                    break;
 
-            else if (command == "r")
-            {
-                Console.WriteLine("\nPause/Play...");
-                filePlayer.RestartPlayback();
-            }
+                case "a":
+                    Console.WriteLine("\nStarter optager...");
+                    recorder.Start();
+                    break;
 
-            else if (command == "q")
-            {
-                Console.WriteLine("\nAfslutter programmet...");
-                break;
-            }
-            else
-            {
-                Console.WriteLine(
-                    "\nUgyldig kommando. Tryk på 1 for videotestsrc, 2 for videoafspilning, eller q for at afslutte.");
+                case "s":
+                    Console.WriteLine("\nStopper optager...");
+                    recorder.Stop();
+                    break;
+
+                case "p":
+                    Console.WriteLine("\nPause/Play...");
+                    filePlayer.PlayPause();
+                    break;
+
+                case "r":
+                    Console.WriteLine("\nGenstarter videoafspilning...");
+                    filePlayer.RestartPlayback();
+                    break;
+
+                case "q":
+                    Console.WriteLine("\nAfslutter programmet...");
+                    return; // Stopper løkken og programmet
+
+                default:
+                    Console.WriteLine("\nUgyldig kommando. Tryk på 1 for videotestsrc, 2 for videoafspilning, eller q for at afslutte.");
+                    break;
             }
         }
-
+        
         // Stop pipeline
         pipeline.SetState(State.Null);
         pipeline.Dispose();
