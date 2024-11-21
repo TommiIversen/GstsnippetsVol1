@@ -44,7 +44,8 @@ internal class Program
             if (key == ConsoleKey.N)
             {
                 Console.WriteLine("\nAfspilning af video...");
-                PlayVideoFile(@"C:\Users\Tommi\Downloads\bun33s.mp4", pipeline, "appsrc-sink_0");
+                PlayVideoFile(@"C:\Users\tomi\RiderProjects\GstsnippetsVol1\AppsrcAppSink1\bun33s.mp4", pipeline,
+                    "appsrc-sink_0");
                 break;
             }
 
@@ -76,9 +77,16 @@ internal class Program
         var appsrc0 = new AppSrc("appsrc-sink_0");
         var appsrc1 = new AppSrc("appsrc-sink_1");
 
+        var webcam = ElementFactory.Make("ksvideosrc", "webcam");
+        var webcamQueue = ElementFactory.Make("queue", "webcam-queue");
+        var webcamConvert = ElementFactory.Make("videoconvert", "webcam-convert");
+        var webcamScale = ElementFactory.Make("videoscale", "webcam-scale");
+        var webcamCapsFilter = ElementFactory.Make("capsfilter", "webcam-capsfilter");
+
         // Verificer elementer
         if (compositor == null || capsfilter == null || tee == null || queue1 == null || queue2 == null
-            || autovideosink1 == null || autovideosink2 == null || appsrc0 == null || appsrc1 == null)
+            || autovideosink1 == null || autovideosink2 == null || appsrc0 == null || appsrc1 == null
+            || webcam == null)
         {
             Console.WriteLine("Fejl: Kunne ikke oprette elementer.");
             Environment.Exit(1);
@@ -91,7 +99,6 @@ internal class Program
         // Konfigurer compositor
         compositor["background"] = 2; // Sort baggrund (0 = Transparent, 1 = Sort)
 
-        // Håndter dynamisk oprettelse af pads
         compositor.PadAdded += (sender, args) =>
         {
             var pad = args.NewPad;
@@ -111,18 +118,39 @@ internal class Program
                     pad.SetProperty("xpos", new Value(320));
                     pad.SetProperty("ypos", new Value(0));
                 }
+                else if (pad.Name == "sink_2") // Webcam placeres på position 640
+                {
+                    pad.SetProperty("xpos", new Value(640));
+                    pad.SetProperty("ypos", new Value(0));
+                }
             }
         };
 
+        var appsrcQueue0 = ElementFactory.Make("queue", "appsrc0-queue");
+        var appsrcQueue1 = ElementFactory.Make("queue", "appsrc1-queue");
+
         // Konfigurer capsfilter
-        capsfilter["caps"] = Caps.FromString("video/x-raw,width=640,height=240");
+        capsfilter["caps"] = Caps.FromString("video/x-raw,format=I420,width=960,height=240,framerate=30/1");
 
         // Tilføj elementer til pipeline
-        pipeline.Add(appsrc0, appsrc1, compositor, capsfilter, tee, queue1, queue2, autovideosink1, autovideosink2);
+        pipeline.Add(appsrc0, appsrc1, webcam, appsrcQueue0, appsrcQueue1, webcamQueue, webcamConvert, webcamScale,
+            webcamCapsFilter, compositor, capsfilter, tee, queue1, queue2, autovideosink1, autovideosink2);
 
-        // Link elementerne
-        appsrc0.Link(compositor);
-        appsrc1.Link(compositor);
+        webcamCapsFilter["caps"] = Caps.FromString("video/x-raw,format=I420,width=320,height=240,framerate=30/1");
+
+        webcam.Link(webcamQueue);
+        webcamQueue.Link(webcamConvert);
+        webcamConvert.Link(webcamScale);
+        webcamScale.Link(webcamCapsFilter);
+        webcamCapsFilter.Link(compositor);
+
+        appsrc0.Link(appsrcQueue0);
+        appsrcQueue0.Link(compositor);
+
+        appsrc1.Link(appsrcQueue1);
+        appsrcQueue1.Link(compositor);
+
+        // Link compositor til resten af pipelinen
         compositor.Link(capsfilter);
         capsfilter.Link(tee);
 
@@ -156,7 +184,6 @@ internal class Program
             Console.WriteLine($"Fejl: Kunne ikke finde AppSrc med navn {appsrcName}.");
             return;
         }
-
 
         var videotestsrc = ElementFactory.Make("videotestsrc", "videotestsrc");
         var capsfilter = ElementFactory.Make("capsfilter", "capsfilter");
@@ -256,6 +283,8 @@ internal class Program
                 }
             }
         };
+        
+        
         appsrc["do-timestamp"] = true;
         // Håndter "NewSample" fra appsink og skub data til appsrc
         appsink.NewSample += (sender, args) =>
