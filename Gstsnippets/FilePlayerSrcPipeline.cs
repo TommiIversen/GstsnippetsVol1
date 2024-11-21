@@ -8,8 +8,8 @@ namespace ConsoleApp11;
 public class FilePlayerSrcPipeline
 {
     private readonly AppSrc? AudioAppSrc;
-    private Element? imageFreeze;
     private readonly AppSrc? VideoAppSrc;
+    private Element? imageFreeze;
 
 
     public FilePlayerSrcPipeline(string filePath, string name, AppSrc? videoAppSrc = null, AppSrc? audioAppSrc = null)
@@ -174,13 +174,11 @@ public class FilePlayerSrcPipeline
                 //         Console.WriteLine($"Error pushing audio buffer to AppSrc: {ret}");
                 //     sample.Dispose();
                 // }
+            };
 
 
-            };            
-            
-            
             ulong currentTimestamp = 0;
-            ulong frameDuration = (ulong)Constants.SECOND / 24; // For 24 fps
+            var frameDuration = (ulong) Constants.SECOND / 24; // For 24 fps
 
             // Håndtering af nye samples i appsink
             videoAppsink.NewSample += (o, args) =>
@@ -210,7 +208,7 @@ public class FilePlayerSrcPipeline
                 !Element.Link(audioCapsFilter, audioAppsink))
                 throw new Exception("Failed to link audio elements in file player pipeline.");
 
-            
+
             AudioAppSrc.NeedData += (src, size) =>
             {
                 Console.WriteLine($"------ AudioFileeeeeeeeAppSrc NeedData: {size}");
@@ -225,18 +223,18 @@ public class FilePlayerSrcPipeline
                 //     sample.Dispose();
                 // }
             };
-            
-            ulong audioTimestamp = 0;
-            ulong audioFrameDuration = (ulong)Constants.SECOND / 44100; // For 44.1 kHz
 
-            
+            ulong audioTimestamp = 0;
+            var audioFrameDuration = (ulong) Constants.SECOND / 44100; // For 44.1 kHz
+
+
             audioAppsink.NewSample += (o, args) =>
             {
                 var sample = audioAppsink.PullSample();
                 if (sample != null)
                 {
                     var buffer = sample.Buffer;
-                    
+
                     // buffer.Pts = audioTimestamp;
                     // buffer.Dts = audioTimestamp;
                     //

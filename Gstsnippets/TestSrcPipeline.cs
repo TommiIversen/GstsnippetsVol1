@@ -1,5 +1,6 @@
 ﻿using Gst;
 using Gst.App;
+using Constants = Gst.Constants;
 using Value = GLib.Value;
 
 namespace GstreamerSharp;
@@ -71,37 +72,29 @@ public class TestSrcPipeline
         AudioTargetAppSrc.SetProperty("do-timestamp", new Value(true));
 
         ulong currentTimestamp = 0;
-        ulong frameDuration = (ulong)Gst.Constants.SECOND / 24; // For 24 fps
-        
+        var frameDuration = (ulong) Constants.SECOND / 24; // For 24 fps
+
         // Video appsink event
-        videoAppsink.NewSample += (o, args) =>
-        {
-
-
-            
-        };
+        videoAppsink.NewSample += (o, args) => { };
 
         //AudioTargetAppSrc.DoTimestamp = true;
 
         VideoTargetAppSrc.NeedData += (src, size) =>
         {
             Console.WriteLine("VideoTargetAppSrc: Need data.");
-            
+
             var sample = videoAppsink.PullSample();
             if (sample != null)
             {
-                
-
                 var buffer = sample.Buffer;
                 buffer.Pts = currentTimestamp;
                 buffer.Dts = currentTimestamp;
                 currentTimestamp += frameDuration; // Opdater timestamp for næste buffer
-                
+
                 var ret = VideoTargetAppSrc.PushBuffer(buffer);
                 if (ret != FlowReturn.Ok) Console.WriteLine($"Error pushing video buffer to AppSrc: {ret}");
                 sample.Dispose();
             }
-
         };
 
         VideoTargetAppSrc.EnoughData += (src, remove) =>
@@ -111,10 +104,7 @@ public class TestSrcPipeline
 
         NeedDaa = false;
         // Opsæt signaler for AudioTargetAppSrc
-        AudioTargetAppSrc.NeedData += (src, size) =>
-        {
-
-        };
+        AudioTargetAppSrc.NeedData += (src, size) => { };
 
         AudioTargetAppSrc.EnoughData += (src, remove) =>
         {
@@ -126,8 +116,7 @@ public class TestSrcPipeline
         // Audio appsink event
         audioAppsink.NewSample += (o, args) =>
         {
-            
-            Console.WriteLine($"AudioTargetAppSrc: Need data. Size");
+            Console.WriteLine("AudioTargetAppSrc: Need data. Size");
             var sample = audioAppsink.TryPullSample(50000000);
             if (sample != null)
             {
@@ -170,11 +159,11 @@ public class TestSrcPipeline
 
 public class TestSrcPipelineNoAudio
 {
-    public Pipeline pipeline;
     private readonly string property;
     private readonly int propertyValue;
     private readonly string sourceElement;
     private readonly AppSrc TargetAppSrc;
+    public Pipeline pipeline;
 
     public TestSrcPipelineNoAudio(string sourceElement, string property, int propertyValue, string name,
         AppSrc targetAppSrc)

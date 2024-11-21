@@ -41,7 +41,7 @@ public class AudioSinkPipeline
             !Element.Link(audioConvert, audioResample) ||
             !Element.Link(audioResample, audioSinkElement))
             throw new Exception($"Failed to link elements in AudioSinkPipeline {name}.");
-        
+
         Pipeline.SetState(State.Ready);
     }
 

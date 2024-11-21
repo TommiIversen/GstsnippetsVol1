@@ -1,6 +1,7 @@
 ﻿using Gst;
 using Gst.App;
 using Value = GLib.Value;
+
 namespace GstreamerSharp;
 
 public class MainPipeline
@@ -8,17 +9,13 @@ public class MainPipeline
     private readonly AppSink audioAppSink; // AppSink til lyd
     private readonly Element audioMixer; // Lydmixer
     private readonly List<Pad> audioMixerPads = new(); // Lyd pads
-    private AppSrc audioTargetAppSrc;
 
     private readonly Element compositor; // Videokomposition
 
     private readonly List<Pad> compositorPads = new(); // Video pads
     private readonly AppSink videoAppSink; // AppSink til video
+    private AppSrc audioTargetAppSrc;
     private AppSrc videoTargetAppSrc;
-    
-    public Pipeline Pipeline { get; }
-    public List<AppSrc> VideoAppSrcs { get; } = new();
-    public List<AppSrc> AudioAppSrcs { get; } = new();
 
 
     public MainPipeline(int videoInputs, int audioInputs)
@@ -86,6 +83,10 @@ public class MainPipeline
         bus.Message += HandleMessage;
     }
 
+    public Pipeline Pipeline { get; }
+    public List<AppSrc> VideoAppSrcs { get; } = new();
+    public List<AppSrc> AudioAppSrcs { get; } = new();
+
     private void AddTestVideoInput()
     {
         // Opret videotestsrc
@@ -126,7 +127,7 @@ public class MainPipeline
         Console.WriteLine("Linked videotestsrc to compositor with queue and capsfilter.");
     }
 
-    
+
     private void CreateAudioInputs(int audioInputs)
     {
         for (var i = 0; i < audioInputs; i++)
@@ -270,13 +271,9 @@ public class MainPipeline
 
                 var latencyQuery = Query.NewLatency();
                 if (Pipeline.Query(latencyQuery))
-                {
-                    Console.WriteLine($"Latency query successful:");
-                }
+                    Console.WriteLine("Latency query successful:");
                 else
-                {
                     Console.WriteLine("Latency query failed.");
-                }
                 break;
 
             case MessageType.Warning:
@@ -298,7 +295,7 @@ public class MainPipeline
                 break;
         }
     }
-    
+
 
     public void SetAudioVolume(int channelIndex, double volume)
     {
