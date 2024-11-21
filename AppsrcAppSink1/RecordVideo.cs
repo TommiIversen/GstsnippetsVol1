@@ -103,21 +103,16 @@ public class RecordVideo
             Console.WriteLine("Stopper optager...");
             _isRecording = false;
             _appSink.NewSample -= OnNewSample;
-
-
+            
             // Send end-of-stream for at lukke filen korrekt
             Console.WriteLine("Sender EOS...");
             _appSrc.EndOfStream();
 
             // Vent på at pipeline afslutter sig selv
-            //_pipeline.GetBus().Poll(MessageType.Eos, Gst.ClockTime.FromSeconds(5));
-            _pipeline.Bus.TimedPopFiltered (Gst.Constants.CLOCK_TIME_NONE, MessageType.Error | MessageType.Eos);
-
-
+            _pipeline.Bus.TimedPopFiltered (Gst.Constants.SECOND*5, MessageType.Error | MessageType.Eos);
+            
             // Sæt pipeline til Null og ryd op
             _pipeline.SetState(State.Null);
-            _pipeline.Dispose();
-
             Console.WriteLine("Optager stoppet og filen er korrekt lukket.");
         }
         catch (Exception ex)
