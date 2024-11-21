@@ -64,16 +64,21 @@ internal class Program
     {
         var pipeline = new Pipeline("dynamic-compositor");
 
-        // Opret compositor og autovideosink
+        // Opret elementer
         var compositor = ElementFactory.Make("compositor", "compositor");
         var capsfilter = ElementFactory.Make("capsfilter", "capsfilter");
-        var autovideosink = ElementFactory.Make("autovideosink", "autovideosink");
+        var tee = ElementFactory.Make("tee", "tee");
+        var queue1 = ElementFactory.Make("queue", "queue1");
+        var queue2 = ElementFactory.Make("queue2", "queue2");
+        var autovideosink1 = ElementFactory.Make("autovideosink", "autovideosink1");
+        var autovideosink2 = ElementFactory.Make("autovideosink", "autovideosink2");
 
         var appsrc0 = new AppSrc("appsrc-sink_0");
         var appsrc1 = new AppSrc("appsrc-sink_1");
 
         // Verificer elementer
-        if (compositor == null || capsfilter == null || autovideosink == null || appsrc0 == null || appsrc1 == null)
+        if (compositor == null || capsfilter == null || tee == null || queue1 == null || queue2 == null
+            || autovideosink1 == null || autovideosink2 == null || appsrc0 == null || appsrc1 == null)
         {
             Console.WriteLine("Fejl: Kunne ikke oprette elementer.");
             Environment.Exit(1);
@@ -92,12 +97,10 @@ internal class Program
             var pad = args.NewPad;
             Console.WriteLine($"Ny pad oprettet: {pad.Name}");
 
-            // Tjek, om det er en sink pad
             if (pad.Direction == PadDirection.Sink)
             {
                 Console.WriteLine($"Ny sink pad oprettet: {pad.Name}");
 
-                // Indstil egenskaber baseret på pad navn
                 if (pad.Name == "sink_0")
                 {
                     pad.SetProperty("xpos", new Value(0));
@@ -115,13 +118,20 @@ internal class Program
         capsfilter["caps"] = Caps.FromString("video/x-raw,width=640,height=240");
 
         // Tilføj elementer til pipeline
-        pipeline.Add(appsrc0, appsrc1, compositor, capsfilter, autovideosink);
+        pipeline.Add(appsrc0, appsrc1, compositor, capsfilter, tee, queue1, queue2, autovideosink1, autovideosink2);
 
         // Link elementerne
         appsrc0.Link(compositor);
         appsrc1.Link(compositor);
         compositor.Link(capsfilter);
-        capsfilter.Link(autovideosink);
+        capsfilter.Link(tee);
+
+        // Opret separate grene fra tee
+        if (!Element.Link(tee, queue1, autovideosink1) || !Element.Link(tee, queue2, autovideosink2))
+        {
+            Console.WriteLine("Fejl: Kunne ikke linke tee til output.");
+            Environment.Exit(1);
+        }
 
         return pipeline;
     }
